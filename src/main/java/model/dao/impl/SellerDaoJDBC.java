@@ -1,20 +1,19 @@
 package model.dao.impl;
 
+import db.DB;
+import db.DbException;
 import model.dao.SellerDao;
 import model.entities.Department;
 import model.entities.Seller;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class SellerDaoJDBC implements SellerDao {
-    private Connection conn;
+    private final Connection conn;
 
     public SellerDaoJDBC(Connection conn) {
         this.conn = conn;
@@ -22,7 +21,32 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public void insert(Seller seller) {
+        PreparedStatement st;
 
+        try {
+            st = conn.prepareStatement("INSERT INTO seller (Name, Email, BirthDate, BaseSalary, DepartmentId) VALUES (?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+
+            st.setString(1, seller.getName());
+            st.setString(2, seller.getEmail());
+            st.setDate(3, new java.sql.Date(seller.getBirthDate().getTime()));
+            st.setDouble(4, seller.getBaseSalary());
+            st.setInt(5, seller.getDepartment().getId());
+
+            int affectedRows = st.executeUpdate();
+
+            if (affectedRows > 0) {
+                ResultSet rs = st.getGeneratedKeys();
+                if (rs.next()) {
+                    seller.setId(rs.getInt(1));
+                }
+
+                DB.closeResultSet(rs);
+            } else {
+                throw new DbException("Unexpected error! No rows affected!");
+            }
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
     }
 
     @Override
@@ -37,8 +61,8 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public Seller findById(Integer id) {
-        PreparedStatement st = null;
-        ResultSet rs = null;
+        PreparedStatement st;
+        ResultSet rs;
 
         try {
             st = conn.prepareStatement("SELECT seller.*, department.Name as DepName " +
@@ -54,7 +78,7 @@ public class SellerDaoJDBC implements SellerDao {
                 return instantiateSeller(rs, dep);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DbException(e.getMessage());
         }
 
         return null;
@@ -62,8 +86,8 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public List<Seller> findAll() {
-        PreparedStatement st = null;
-        ResultSet rs = null;
+        PreparedStatement st;
+        ResultSet rs;
 
         try {
             st = conn.prepareStatement("SELECT seller.*, department.Name as DepName " +
@@ -89,14 +113,14 @@ public class SellerDaoJDBC implements SellerDao {
 
             return sellerList;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DbException(e.getMessage());
         }
     }
 
     @Override
     public List<Seller> findByDepartment(Department department) {
-        PreparedStatement st = null;
-        ResultSet rs = null;
+        PreparedStatement st;
+        ResultSet rs;
 
         try {
             st = conn.prepareStatement("SELECT seller.*, department.Name as DepName " +
@@ -123,7 +147,7 @@ public class SellerDaoJDBC implements SellerDao {
 
             return sellerList;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DbException(e.getMessage());
         }
     }
 
