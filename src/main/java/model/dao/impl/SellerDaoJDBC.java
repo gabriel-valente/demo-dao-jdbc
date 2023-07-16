@@ -75,12 +75,24 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public void deleteById(Integer id) {
+        PreparedStatement st = null;
 
+        try {
+            st = conn.prepareStatement("DELETE FROM seller WHERE Id = ?");
+
+            st.setInt(1, id);
+
+            st.executeUpdate();
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        } finally {
+            DB.closeStatement(st);
+        }
     }
 
     @Override
     public Seller findById(Integer id) {
-        PreparedStatement st;
+        PreparedStatement st = null;
         ResultSet rs;
 
         try {
@@ -98,6 +110,8 @@ public class SellerDaoJDBC implements SellerDao {
             }
         } catch (SQLException e) {
             throw new DbException(e.getMessage());
+        } finally {
+            DB.closeStatement(st);
         }
 
         return null;
@@ -105,7 +119,7 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public List<Seller> findAll() {
-        PreparedStatement st;
+        PreparedStatement st = null;
         ResultSet rs;
 
         try {
@@ -133,12 +147,14 @@ public class SellerDaoJDBC implements SellerDao {
             return sellerList;
         } catch (SQLException e) {
             throw new DbException(e.getMessage());
+        } finally {
+            DB.closeStatement(st);
         }
     }
 
     @Override
     public List<Seller> findByDepartment(Department department) {
-        PreparedStatement st;
+        PreparedStatement st = null;
         ResultSet rs;
 
         try {
@@ -167,6 +183,8 @@ public class SellerDaoJDBC implements SellerDao {
             return sellerList;
         } catch (SQLException e) {
             throw new DbException(e.getMessage());
+        } finally {
+            DB.closeStatement(st);
         }
     }
 
